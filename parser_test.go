@@ -221,6 +221,12 @@ var deleteTests = []DeleteTest{
 		path: []string{""},
 		data: `^_ï¿½^C^A^@{`,
 	},
+	{
+		desc: "Issue #150: leading space",
+		json: `   {"test":"input"}`,
+		path: []string{"test"},
+		data: `   {}`,
+	},
 }
 
 var setTests = []SetTest{
@@ -988,6 +994,18 @@ var getStringTests = []GetTest{
 		path:  []string{"c"},
 		isErr: true,
 	},
+	{
+		desc:    `empty array index`,
+		json:    `[""]`,
+		path:    []string{"[]"},
+		isFound: false,
+	},
+	{
+		desc:    `malformed array index`,
+		json:    `[""]`,
+		path:    []string{"["},
+		isFound: false,
+	},
 }
 
 var getUnsafeStringTests = []GetTest{
@@ -1420,9 +1438,9 @@ func TestArrayEachWithWhiteSpace(t *testing.T) {
 		keys []string
 	}
 	tests := []struct {
-		name       string
-		args       args
-		wantErr    bool
+		name    string
+		args    args
+		wantErr bool
 	}{
 		{"Array with white space", args{[]byte(`    ["AAA", "BBB", "CCC"]`), funcSuccess, []string{}}, false},
 		{"Array with only one character after white space", args{[]byte(`    1`), funcError, []string{}}, true},
@@ -1675,8 +1693,9 @@ func TestEachKey(t *testing.T) {
 		{"arrInt", "[3]"},
 		{"arrInt", "[5]"}, // Should not find last key
 		{"nested"},
-		{"arr", "["}, // issue#177 Invalid arguments
-		{"a\n", "b\n"}, // issue#165
+		{"arr", "["},    // issue#177 Invalid arguments
+		{"a\n", "b\n"},  // issue#165
+		{"nested", "b"}, // Should find repeated key
 	}
 
 	keysFound := 0
@@ -1729,13 +1748,17 @@ func TestEachKey(t *testing.T) {
 			if string(value) != "99" {
 				t.Error("Should find 10 key", string(value))
 			}
+		case 12:
+			if string(value) != "2" {
+				t.Errorf("Should find 11 key")
+			}
 		default:
 			t.Errorf("Should find only 10 keys, got %v key", idx)
 		}
 	}, paths...)
 
-	if keysFound != 10 {
-		t.Errorf("Should find 10 keys: %d", keysFound)
+	if keysFound != 11 {
+		t.Errorf("Should find 11 keys: %d", keysFound)
 	}
 }
 
